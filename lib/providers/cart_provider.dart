@@ -5,7 +5,6 @@ import '../services/index.dart';
 class CartProvider extends ChangeNotifier {
   final LocalStorageService _storageService;
 
-  // ✅ استقبل الخدمة جاهزة
   CartProvider(this._storageService);
 
   List<CartItem> _items = [];
@@ -19,7 +18,6 @@ class CartProvider extends ChangeNotifier {
   double get totalPrice =>
       _items.fold(0.0, (sum, item) => sum + item.totalPrice);
 
-  /// Initialize cart from local storage
   Future<void> initializeCart() async {
     try {
       _items = await _storageService.getCart();
@@ -29,7 +27,6 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Add product to cart
   Future<void> addToCart(Product product) async {
     try {
       final existingIndex =
@@ -52,7 +49,6 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  /// Remove product from cart
   Future<void> removeFromCart(int productId) async {
     try {
       _items.removeWhere((item) => item.product.id == productId);
@@ -64,7 +60,6 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  /// Update product quantity in cart
   Future<void> updateQuantity(int productId, int quantity) async {
     try {
       final index =
@@ -86,7 +81,6 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  /// Clear entire cart
   Future<void> clearCart() async {
     try {
       _items.clear();

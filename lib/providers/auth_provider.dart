@@ -5,7 +5,6 @@ import '../services/index.dart';
 class AuthProvider extends ChangeNotifier {
   final LocalStorageService _storageService;
 
-  // ✅ استقبل الخدمة جاهزة
   AuthProvider(this._storageService);
 
   User? _user;
@@ -18,7 +17,6 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// Initialize auth state
   Future<void> initializeAuth() async {
     _isLoading = true;
     notifyListeners();
@@ -37,7 +35,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Login with email (Mock)
   Future<bool> loginWithEmail(String email, String password, LocalStorageService storage) async {
     _isLoading = true;
     _error = null;
@@ -68,10 +65,10 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Login with phone (Mock)
   Future<bool> loginWithPhone(
       String phoneNumber,
-      String country, LocalStorageService storage,
+      String country,
+      LocalStorageService storage,
       ) async {
     _isLoading = true;
     _error = null;
@@ -103,7 +100,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Logout
   Future<void> logout() async {
     try {
       await _storageService.clearUser();

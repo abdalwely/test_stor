@@ -15,8 +15,30 @@ class ProductDetailsScreen extends StatefulWidget {
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
-class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+class _ProductDetailsScreenState extends State<ProductDetailsScreen>
+    with SingleTickerProviderStateMixin {
   int _quantity = 1;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,18 +60,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildProductImage(),
-            _buildProductInfo(),
-            _buildProductDescription(),
-            _buildRating(),
-            _buildQuantitySelector(),
-            _buildAddToCartButton(),
-            const SizedBox(height: 24),
-          ],
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProductImage(),
+              _buildProductInfo(),
+              _buildProductDescription(),
+              _buildRating(),
+              _buildQuantitySelector(),
+              _buildAddToCartButton(),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -358,19 +383,40 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
   Future<void> _handleAddToCart() async {
     final cartProvider = context.read<CartProvider>();
-    
+
+    // إضافة الكمية المطلوبة إلى السلة
     for (int i = 0; i < _quantity; i++) {
       await cartProvider.addToCart(widget.product);
     }
 
     if (mounted) {
+      // عرض SnackBar بنجاح الإضافة
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('تمت إضافة $_quantity منتج للسلة'),
-          backgroundColor: Colors.green,
-          duration: const Duration(milliseconds: 1500),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Text(
+                'تمت إضافة $_quantity منتج للسلة',
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          duration: const Duration(milliseconds: 2000),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       );
+
+      // عودة بعد 2 ثانية
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) Navigator.pop(context);
+      });
     }
   }
 }

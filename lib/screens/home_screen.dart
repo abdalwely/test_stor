@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/index.dart';
 import '../providers/index.dart';
+import '../widgets/index.dart';
 import 'product_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -57,22 +58,30 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBody() {
     return Consumer<ProductProvider>(
       builder: (context, productProvider, _) {
+        // 🔄 Loading State
         if (productProvider.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return ProductSkeletonGrid();
         }
 
+        // 🚨 Error State
         if (productProvider.error != null) {
-          return _buildErrorState(productProvider);
-        }
-
-        if (productProvider.products.isEmpty) {
-          return const Center(
-            child: Text('لا توجد منتجات'),
+          return ErrorStateWidget(
+            title: 'فشل تحميل المنتجات',
+            message: productProvider.error,
+            onRetry: () => productProvider.fetchProducts(),
           );
         }
 
+        // 📭 Empty State
+        if (productProvider.products.isEmpty) {
+          return EmptyStateWidget(
+            title: 'لا توجد منتجات',
+            message: 'عذرا، لا توجد منتجات متاحة حاليا',
+            icon: Icons.shopping_bag_outlined,
+          );
+        }
+
+        // ✅ Products Grid
         return RefreshIndicator(
           onRefresh: () => productProvider.fetchProducts(),
           child: GridView.builder(
@@ -94,52 +103,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildErrorState(ProductProvider productProvider) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red.shade400,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            productProvider.error ?? 'حدث خطأ',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              productProvider.fetchProducts();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade900,
-            ),
-            child: const Text('حاول مجددا'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildProductCard(BuildContext context, Product product) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                ProductDetailsScreen(product: product),
+            builder: (context) => ProductDetailsScreen(product: product),
           ),
         );
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: Colors.white,
@@ -154,6 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 🖼️ Product Image
             Expanded(
               flex: 3,
               child: Container(
@@ -168,17 +144,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Image.network(
                   product.image,
                   fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: SizedBox(
+                        width: 30,
+                        height: 30,
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    );
+                  },
                   errorBuilder: (context, error, stackTrace) {
                     return Center(
                       child: Icon(
                         Icons.image_not_supported,
                         color: Colors.grey.shade400,
+                        size: 40,
                       ),
                     );
                   },
                 ),
               ),
             ),
+            // 📋 Product Details
             Expanded(
               flex: 2,
               child: Padding(
@@ -186,49 +180,52 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 🏷️ Product Title
                     Expanded(
                       child: Text(
                         product.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
+                    // ⭐ Rating
                     Row(
                       children: [
                         const Icon(
                           Icons.star,
-                          size: 16,
+                          size: 14,
                           color: Colors.amber,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          product.rating.rate.toString(),
+                          product.rating.rate.toStringAsFixed(1),
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 2),
                         Text(
                           '(${product.rating.count})',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 10,
                             color: Colors.grey.shade600,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
+                    // 💰 Price
                     Text(
                       '\$${product.price.toStringAsFixed(2)}',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: Colors.blue.shade900,
                       ),
@@ -248,14 +245,10 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, cartProvider, _) {
         return FloatingActionButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('سلة التسوق'),
-                duration: Duration(milliseconds: 500),
-              ),
-            );
+            Navigator.pushNamed(context, '/cart');
           },
           backgroundColor: Colors.blue.shade900,
+          tooltip: 'سلة التسوق',
           child: Stack(
             alignment: Alignment.topRight,
             children: [

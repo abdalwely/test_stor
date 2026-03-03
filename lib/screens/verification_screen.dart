@@ -7,11 +7,13 @@ import '../services/index.dart';
 class VerificationScreen extends StatefulWidget {
   final String phoneNumber;
   final String country;
+  final bool isSignUp;
 
   const VerificationScreen({
     Key? key,
     required this.phoneNumber,
     required this.country,
+    this.isSignUp = false,
   }) : super(key: key);
 
   @override
@@ -154,10 +156,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget _buildCodeFields() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(
-        4,
-        (index) => _buildCodeField(index),
-      ),
+      children: List.generate(4, (index) => _buildCodeField(index)),
     );
   }
 
@@ -166,13 +165,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _focusNodes[index].hasFocus ? Colors.white : Colors.white30,
+          color: _focusNodes[index].hasFocus ? Colors.blue.shade700 : Colors.grey.shade400,
           width: _focusNodes[index].hasFocus ? 2 : 1,
         ),
       ),
+      alignment: Alignment.center,
       child: TextField(
         controller: _codeControllers[index],
         focusNode: _focusNodes[index],
@@ -180,9 +180,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
         maxLength: 1,
         keyboardType: TextInputType.number,
         style: const TextStyle(
-          fontSize: 24,
+          fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: Colors.black,
         ),
         decoration: const InputDecoration(
           counterText: '',
@@ -190,9 +190,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
           contentPadding: EdgeInsets.zero,
         ),
         onChanged: (value) {
-          if (value.isNotEmpty && index < 3) {
+          if (value.length == 1 && index < 3) {
             _focusNodes[index + 1].requestFocus();
+          } else if (value.isEmpty && index > 0) {
+            _focusNodes[index - 1].requestFocus();
           }
+        },
+        onTapOutside: (event) {
+          FocusScope.of(context).unfocus();
         },
       ),
     );
@@ -215,19 +220,20 @@ class _VerificationScreenState extends State<VerificationScreen> {
             ),
             child: authProvider.isLoading
                 ? const SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-                  )
+              height: 24,
+              width: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.blue,
+              ),
+            )
                 : const Text(
-                    'تحقق',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              'تحقق',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         );
       },
@@ -271,7 +277,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
       return;
     }
 
-    // Mock verification - correct code is 0000
     if (code != '0000') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -282,7 +287,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
       return;
     }
 
-    // Proceed with login
     final prefs = await SharedPreferences.getInstance();
     final storage = LocalStorageService(prefs);
     final authProvider = context.read<AuthProvider>();

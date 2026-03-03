@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'providers/index.dart';
 import 'screens/index.dart';
 import 'services/index.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'theme/app_theme.dart';
 
 class MyApp extends StatelessWidget {
   final SharedPreferences prefs;
@@ -15,24 +17,25 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Services
+        /// Services
         Provider<LocalStorageService>(
           create: (_) => LocalStorageService(prefs),
         ),
         Provider<ApiService>(
           create: (_) => ApiService(),
         ),
-        // Providers
+
+        /// Providers
         ChangeNotifierProvider<ProductProvider>(
           create: (_) => ProductProvider(),
         ),
         ChangeNotifierProvider<CartProvider>(
           create: (context) =>
-              CartProvider(context.read<LocalStorageService>()), // ⚡ positional argument
+              CartProvider(context.read<LocalStorageService>()),
         ),
         ChangeNotifierProxyProvider<LocalStorageService, AuthProvider>(
           create: (context) =>
-              AuthProvider(context.read<LocalStorageService>()), // ⚡ positional argument
+              AuthProvider(context.read<LocalStorageService>()),
           update: (_, storage, authProvider) {
             authProvider?.initializeAuth();
             return authProvider!;
@@ -40,22 +43,32 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'متجري',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-          appBarTheme: AppBarTheme(
-            backgroundColor: Colors.blue.shade900,
-            elevation: 0,
-            centerTitle: true,
-          ),
-        ),
+
+        /// 🎨 تطبيق الثيم
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.light,
+
+        /// دعم RTL
+        builder: (context, child) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: child!,
+          );
+        },
+
         home: _buildHome(),
+
         routes: {
           '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignUpScreen(),
           '/home': (context) => const HomeScreen(),
+          '/cart': (context) => const CartScreen(),
         },
-        // دعم اللغة العربية بالكامل
+
+        /// دعم اللغة العربية
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
@@ -63,7 +76,7 @@ class MyApp extends StatelessWidget {
         ],
         supportedLocales: const [
           Locale('ar', 'SA'),
-          Locale('en', 'US'), // fallback
+          Locale('en', 'US'),
         ],
       ),
     );

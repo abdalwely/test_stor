@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/index.dart';
 import '../services/index.dart';
+import '../constants/app_constants.dart';
 import 'verification_screen.dart';
 
 class PhoneLoginScreen extends StatefulWidget {
@@ -14,17 +15,13 @@ class PhoneLoginScreen extends StatefulWidget {
 
 class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   final _phoneController = TextEditingController();
-  String _selectedCountry = '🇸🇦 السعودية';
-  
-  final List<String> _countries = [
-    '🇸🇦 السعودية',
-    '🇦🇪 الإمارات',
-    '🇪🇬 مصر',
-    '🇰🇼 الكويت',
-    '🇶🇦 قطر',
-    '🇧🇭 البحرين',
-    '🇴🇲 عمان',
-  ];
+  late String _selectedCountry;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCountry = AppConstants.defaultCountry;
+  }
 
   @override
   void dispose() {
@@ -148,7 +145,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         dropdownColor: Colors.blue.shade800,
         icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
         style: const TextStyle(color: Colors.white),
-        items: _countries.map((country) {
+        items: AppConstants.supportedCountries.map((country) {
           return DropdownMenuItem(
             value: country,
             child: Text(country),
